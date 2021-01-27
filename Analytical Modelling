@@ -1,0 +1,131 @@
+title: "Untitled"
+author: "Deepali"
+date: "1/24/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#  Q-2.2-1)...The files credit_card_data.txt (without headers) and credit_card_data-headers.txt (with headers) contain a dataset with 654 data points, 6 continuous and 4 binary predictor variables.  It has anonymized credit card applications with a binary response variable (last column) indicating if the application was positive or negative. The dataset is the “Credit Approval Data Set” from the UCI Machine Learning Repository (https://archive.ics.uci.edu/ml/datasets/Credit+Approval) without the categorical variables and without data points that have missing values.
+
+
+
+
+
+setwd("C:/Users/rash0/OneDrive/Documents/Georgia Tech/Georgia Tech Masters/ISYE6501/FA_SP_hw1/data 2.2")
+credit_card_data.headers<-read.delim("credit_card_data-headers.txt", header=TRUE)
+
+library(kernlab)
+library(e1071)
+library(caret)
+library(ggplot2)
+library(tidyverse)
+library(caTools)
+View(credit_card_data.headers)
+credits<-credit_card_data.headers
+head(credits)
+str(credits)
+#Here we are setting the
+
+credits$R1=factor(credits$R1,level=c(0,1))
+split=sample.split(credits$R1,SplitRatio=0.70)
+train_credits<-subset(credits,split==TRUE)
+head(train_credits)
+test_credits<-subset(credits,split==FALSE)
+head(test_credits)
+#scaling is done to keep the dataset range from 0 to 1
+
+train_credits[-11]=scale(train_credits[-11])
+test_credits[-11]=scale(test_credits[-11])
+
+#Case 1:using svm model fitting the testing set for value of C value as 100000
+
+sm_fit1<-ksvm(R1~.,data=train_credits,kernel="vanilladot",type="C-svc",C=100000,scale=TRUE)
+
+a1<-colSums(sm_fit1@xmatrix[[1]] * sm_fit1@coef[[1]]) 
+a0<- -sm_fit1@b
+a0
+summary(sm_fit1)
+pred<-predict(sm_fit1,newdata=test_credits[-11])
+pred
+#the accuracy of the model is 86%
+sum(pred ==test_credits[,11])/nrow(test_credits)
+
+#case 2
+
+sm_fit2<-ksvm(R1~.,data=train_credits,kernel="vanilladot",type="C-svc",C=1,scale=TRUE)
+a1<-colSums(sm_fit2@xmatrix[[1]] * sm_fit2@coef[[1]]) 
+a0<- -sm_fit2@b
+a0
+summary(sm_fit2)
+pred<-predict(sm_fit2,newdata=test_credits[-11])
+
+pred
+#the accuracy of the model is 88% for case 2
+sum(pred ==test_credits[,11])/nrow(test_credits)
+
+#Case 3:
+
+sm_fit3<-ksvm(R1~.,data=train_credits,kernel="vanilladot",type="C-svc",C=100000000,scale=TRUE)
+a1<-colSums(sm_fit3@xmatrix[[1]] * sm_fit3@coef[[1]]) 
+a0<- -sm_fit3@b
+a0
+summary(sm_fit3)
+pred<-predict(sm_fit3,newdata=test_credits[-11])
+
+pred
+#the accuracy of the model is 76% for case 2
+sum(pred ==test_credits[,11])/nrow(test_credits)
+
+#Conclusion_ for my model As the C value is increasing ,the accuracy is decreasing as due to the high valu of C there can be the chances if misclassification as the model with high value of C will try to fit each and every datapoint .The best model is smfit2 for me .
+
+#Q 2.2-2)3.	Using the k-nearest-neighbors classification function kknn contained in the R knn package, suggest a good value of k, and show how well it classifies that data points in the full data set.  Don’t forget to scale the data (scale=TRUE in knn).
+
+credit_new<-credits[,-11]
+view(credit_new)
+#normalization is the type of standardized scaling done to ensure that all value are from 0 to 1.
+data_norm<-function(x){((x-min(x))/(max(x)-min(x)))}
+credit_norm<-as.data.frame(lapply(credit_new,data_norm))
+summary(credit_norm[,1:10])
+#creating the training dataset
+credit_train<-credit_norm[1:200,]
+view(credit_train)
+credit_test<-credit_norm[201:654,]
+view(credit_test)
+library(class)
+library(kernlab)
+library(caret)
+#prediting for 454 test data and training for 200 values,I am checking for squareroot of total number of observations which ic k=25.
+
+KNN_25<-knn(train=credit_train,test=credit_test,cl=credit_new[1:200,1],k=25)
+tablecm25<-table(KNN_25,credit_new[201:654,1])
+summary(tablecm25)
+confusionMatrix(tablecm25)
+
+#Case 1 :for k=25 ,I am getting around 100 percent accuracy and it  is trying to overfit the model
+
+#CAse 2: for k=50 ,I am getting around 99 percent accuracy for the same training and testing datasets.
+  
+KNN_50<-knn(train=credit_train,test=credit_test,cl=credit_new[1:200,1],k=50)
+tablecm50<-table(KNN_50,credit_new[201:654,1])
+summary(tablecm50)
+confusionMatrix(tablecm50)
+#case3:for k=100 ,I am getting around 94 percent accuracy for the same training and testing datasets.
+KNN_100<-knn(train=credit_train,test=credit_test,cl=credit_new[1:200,1],k=100)
+tablecm100<-table(KNN_100,credit_new[201:654,1])
+summary(tablecm100)
+confusionMatrix(tablecm100)
+#case4:or k=150 , percent accuracy is 74% for the same training and testing datasets.
+
+KNN_150<-knn(train=credit_train,test=credit_test,cl=credit_new[1:200,1],k=150)
+tablecm150<-table(KNN_150,credit_new[201:654,1])
+summary(tablecm150)
+confusionMatrix(tablecm150)
+
+#So for my datset the good value of k is 100 for which the accuracy is 94% whch does not allow the model to overfit.
+```
